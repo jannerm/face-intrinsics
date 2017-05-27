@@ -4,11 +4,9 @@
 Renders a face along with its reflectance, depth, surface normals, shading. 
 
 <p align="center">
-  <img src="output/example/0_composite.png">
-  <img src="output/example/0_albedo.png">
-  <img src="output/example/0_depth.png">
-  <img src="output/example/0_normals.png">
-  <img src="output/example/0_shading.png">
+  <img src="output/readme/0.png"><br>
+  <img src="output/readme/1.png"><br>
+  <img src="output/readme/2.png">
 </p>
 
 ## Instructions

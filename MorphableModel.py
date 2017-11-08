@@ -1,4 +1,4 @@
-import os, math, numpy as np, scipy, bpy
+import os, math, numpy as np, scipy, bpy, pdb
 
 class MorphableModel:
 
@@ -19,9 +19,9 @@ class MorphableModel:
         bpy.data.objects['shape'].scale[2] = 0.0000264
         bpy.data.objects['shape'].rotation_euler[0] = 90.*math.pi/180.0
         bpy.data.objects['shape'].rotation_euler[2] = 0.*math.pi/180.0
-        bpy.data.objects['shape'].location[0] = 0.0
+        bpy.data.objects['shape'].location[0] = 0
         bpy.data.objects['shape'].location[1] = 0
-        bpy.data.objects['shape'].location[2] = .4
+        bpy.data.objects['shape'].location[2] = 0
 
         ## smooth the faces
         bpy.ops.object.shade_smooth()
@@ -51,7 +51,7 @@ class MorphableModel:
     latents : 400-length list of alpha and beta coefficients
     modifies blender face
     '''
-    def update_face(self, latents):
+    def update_face(self, latents, rot_x = 0, rot_y = 0):
         alpha = latents[:200]
         beta = latents[200:400]
         shape_mat = np.array(self.__coef_to_object(alpha, self.shapeMU, self.shapePC, self.shapeEV, self.segMM, self.segMB, 4))
@@ -59,6 +59,9 @@ class MorphableModel:
         tex_mat = tex_mat.swapaxes(0, 1)
         tex_mat.shape = (53490, 3)
         vertices = self.__get_vertices(shape_mat)
+        # pdb.set_trace()
+        vertices = self.global_rotate(vertices, rot_x, rot_y)
+        # vertices = self.reflect_z(vertices)
         colors = self.__get_colors(tex_mat, self.tl)
         self.__modify_mesh(vertices, colors)
 
@@ -86,12 +89,14 @@ class MorphableModel:
     def __modify_mesh(self, shape, colors):
         mesh = bpy.data.meshes['mesh']
         cols = mesh.vertex_colors.active.data
-        if shape:
+        if shape is not None:
             for i in range(len(mesh.vertices)):
                 mesh.vertices[i].co = shape[i]
-        if colors:
+        if colors is not None:
             for i in range(len(cols)):
                 cols[i].color = colors[i]
+        ## x = -x, to match matlab rendering
+        bpy.ops.transform.mirror(constraint_axis=(True,False,False))
         mesh.update()
 
     '''
@@ -99,12 +104,27 @@ class MorphableModel:
         obj : returned by coef_to_object
     '''
     def __get_vertices(self, obj):
-        vertices = []
-        count = 0
-        for i in range(53490):
-            vertices.append((obj[count], obj[count+1], obj[count+2]))
-            count += 3
+        # vertices = []
+        # count = 0
+        # for i in range(53490):
+        #     vertices.append((obj[count], obj[count+1], obj[count+2]))
+        #     count += 3
+        num_verts = int(obj.size / 3)
+        vertices = obj.reshape(num_verts, 3)
         return vertices
+
+    def global_rotate(self, vertices, x, y):
+        if x != 0 or y != 0:
+            rot_mat_x = self.__rotx(x)
+            rot_mat_y = self.__roty(y)
+            vertices = np.dot(rot_mat_x, np.dot(rot_mat_y, vertices.T)).T
+        return vertices
+
+    ## x = -x, to match matlab rendering
+    # def reflect_z(self, vertices):
+        # vertices[:,0] *= 1
+        # bpy.ops.transform.mirror(constraint_axis=(True,False,False))
+        # return vertices
 
     '''
     transforms texture object into blender colors
@@ -145,5 +165,22 @@ class MorphableModel:
         obj = np.matrix(np.reshape(obj, (160470, 1)))
         return obj
 
+    def __deg_to_rad(self, deg):
+        rad = math.pi * deg / 180.
+        return rad
+
+    def __rotx(self, deg):
+        rad = self.__deg_to_rad(deg)
+        R = np.array([  [1,             0,               0],
+                        [0,             np.cos(rad),     -np.sin(rad)],
+                        [0,             np.sin(rad),      np.cos(rad)]])
+        return R
+
+    def __roty(self, deg):
+        rad = self.__deg_to_rad(deg)
+        R = np.array([  [np.cos(rad),   0,      np.sin(rad)],
+                        [0,             1,      0],
+                        [-np.sin(rad),  0,      np.cos(rad)]])
+        return R
 
 

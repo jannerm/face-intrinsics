@@ -7,7 +7,7 @@ class BlenderRender:
     initializes the blender scene
     with camera and lighting conditions
     '''
-    def __init__(self, light_pos=[0,-10,3], light_energy=4.5):
+    def __init__(self, light_pos = [0,-10,3], light_energy = 4.5):
         self.delete(lambda x: x.name != 'Camera')
         self.translate('Camera', [0, -10, 0])
         self.rotate('Camera', [90, 0, 0])

@@ -1,9 +1,9 @@
-import sys, os, math, argparse, time, random, subprocess, numpy as np
+import sys, os, math, argparse, time, random, subprocess
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--x_res', default=256,
+parser.add_argument('--x_res', default=300,
     help='x dim of rendered image')
-parser.add_argument('--y_res', default=256,
+parser.add_argument('--y_res', default=300,
     help='y dim of rendered image')
 parser.add_argument('--light_pos', default=[0,-10,3], 
     help='lights [x,y,z] position')
@@ -27,7 +27,8 @@ if type(args.light_pos) == str:
 print('\n', args)
 
 sys.path.append(args.include)
-import scipy.io, scipy.stats
+import scipy.io, scipy.stats, numpy as np
+
 
 sys.path.append('.')
 from BlenderRender import BlenderRender
@@ -44,7 +45,7 @@ render_array = np.load(args.array_path)
 for [identity, filename, outpath, angles, position] in render_array[ args.start : args.end ]:
 
     ## update face shape and texture
-    Morphable.update_face(identity)
+    Morphable.update_face(identity, rot_x = angles[0], rot_y = angles[1])
 
     ## duplicate objects for intrinsics rendering
     Blender.duplicate('shape', 'shape_shading')
@@ -52,7 +53,7 @@ for [identity, filename, outpath, angles, position] in render_array[ args.start 
     
     ## move / rotate objects
     Blender.translate( ['shape', 'shape_shading', 'shape_normals'], position )
-    Blender.rotate( ['shape', 'shape_shading', 'shape_normals'], angles )
+    Blender.rotate( ['shape', 'shape_shading', 'shape_normals'], [90, 0, 0] )
 
     ## render object and intrinsic images
     for mode in ['composite', 'albedo', 'depth', 'normals', 'shading']:

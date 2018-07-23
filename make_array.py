@@ -16,5 +16,4 @@ for ind in range(num_examples):
     info = [latents, filename, outpath, angles, position]
     array.append(info)
 
-pdb.set_trace()
 np.save(save_path, array)
